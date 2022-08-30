@@ -101,7 +101,7 @@ def run_javadoc_api(spoon_jar: Path, javadoc_api_path: Path, config_path: Path) 
     print_info("Running JavadocApi")
 
     data: dict[str, list[float]] = dict()
-    for _ in range(10):
+    for _ in range(5):
         for name, val in run_javadoc_api_iteration(spoon_jar, javadoc_api_path, config_path).items():
             if name in data:
                 data[name].append(val)

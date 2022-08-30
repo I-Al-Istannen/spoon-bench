@@ -69,7 +69,7 @@ class Benchmark:
         for name, measurement in self.measurements.items():
             vals[name] = measurement.to_dict()
 
-        return {"name": self.name, "measurements": vals}
+        return {self.name: vals}
 
 
 def clone_guava() -> Path:
