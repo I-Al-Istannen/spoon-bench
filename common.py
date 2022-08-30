@@ -77,7 +77,9 @@ def clone_guava() -> Path:
     guava_path = Path("/tmp/guava")
 
     if guava_path.exists():
-        shutil.rmtree(guava_path)
+        print_success("Existed already")
+        return guava_path
+        # shutil.rmtree(guava_path)
 
     check_output(
         args=["git", "clone", "https://github.com/google/guava", str(guava_path), "--depth=1"],

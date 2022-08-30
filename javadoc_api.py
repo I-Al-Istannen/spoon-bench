@@ -12,7 +12,9 @@ def clone_javadoc_api() -> Path:
     print_info("Cloning JavadocApi")
     directory = Path("/tmp/JavadocApi")
     if directory.exists():
-        shutil.rmtree(directory)
+        print_success("Existed already")
+        return directory
+        # shutil.rmtree(directory)
 
     check_output(
         [
@@ -50,13 +52,19 @@ def write_javadoc_api_config(javadoc_api_path: Path, path_to_index: Path) -> Pat
 
 
 def patch_javadoc_api(javadoc_api_path: Path, spoon_jar: Path):
+    print_info("Patching javadoc api...")
+
+    if (javadoc_api_path / "target/JavadocApi.jar").exists():
+        print_success("Skipped patch (build was present)")
+        return
+
+
     with open("JavadocApi.patch.template", "r") as file:
         text = file.read().replace("{{PATH}}", str(spoon_jar))
 
     with open(javadoc_api_path / "JavadocApi.patch", "w") as file:
         file.write(text)
 
-    print_info("Patching javadoc api...")
     check_output(
         args=["patch < JavadocApi.patch"],
         shell=True,
@@ -68,6 +76,11 @@ def patch_javadoc_api(javadoc_api_path: Path, spoon_jar: Path):
 
 def build_javadoc_api(javadoc_api_path: Path):
     print_info("Building JavadocApi")
+
+    if (javadoc_api_path / "target/JavadocApi.jar").exists():
+        print_success("Skipped build (was present)")
+        return
+
     check_output(
         args=["mvn", "clean", "package"],
         cwd=javadoc_api_path,
