@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import sys
+from pathlib import Path
+from subprocess import STDOUT, CalledProcessError, SubprocessError, check_output
+
+from common import print_header, print_info, print_success
+from javadoc_api import measure_javadoc_api
+
+
+def build_spoon(spoon_path: Path):
+    print_info("Running maven package")
+    check_output(
+        args=["mvn", "clean", "package", "-DskipDepClean=true", "-Dmaven.test.skip=true"],
+        cwd=spoon_path,
+        stderr=STDOUT
+    )
+    print_success("  Built")
+
+
+def main():
+    print_header("Building Spoon revision")
+    spoon_revision = Path(sys.argv[1])
+    build_spoon(spoon_revision)
+
+    spoon_jar = list(spoon_revision.glob("target/*-jar-with-dependencies.jar"))[0]
+    benchmark = measure_javadoc_api(spoon_jar)
+    print(json.dumps(benchmark.to_dict(), indent=2))
+
+
+if __name__ == "__main__":
+    print_info(f"CWD: {str(Path('.').absolute())}")
+    os.chdir(os.path.abspath(os.path.dirname(__file__)))
+    print_info(f"CWD: {str(Path('.').absolute())}")
+
+    try:
+        main()
+    except CalledProcessError as e:
+        print_header("Execution failed")
+        print_info("Stdout:")
+        print_info(e.stdout.decode())
+        print_info("Stderr:")
+        print_info(e.stdout.decode())
+
+        exit(1)
