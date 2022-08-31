@@ -90,12 +90,18 @@ def build_javadoc_api(javadoc_api_path: Path):
     print_success("  Built")
 
 
-def run_javadoc_api_iteration(spoon_jar: Path, javadoc_api_path: Path, config_path: Path) -> dict[str, float]:
+def run_javadoc_api_iteration(
+    spoon_jar: Path,
+    javadoc_api_path: Path,
+    config_path: Path,
+    ignore_method_body: bool
+) -> dict[str, float]:
     javadocapi_jar = javadoc_api_path / "target/JavadocApi.jar"
 
     output = check_output(
         args=[
             "/home/bench/.sdkman/candidates/java/current/bin/java",
+            *(["-DkeepFullAst=true"] if not ignore_method_body else []),
             "-cp",
             f"{str(spoon_jar.absolute())}:" +
             str(javadocapi_jar.absolute()),
@@ -110,12 +116,23 @@ def run_javadoc_api_iteration(spoon_jar: Path, javadoc_api_path: Path, config_pa
     return json.loads([x for x in output.splitlines() if x.startswith('{"')][0])
 
 
-def run_javadoc_api(spoon_jar: Path, javadoc_api_path: Path, config_path: Path) -> Benchmark:
+def run_javadoc_api(
+        spoon_jar: Path,
+        javadoc_api_path: Path,
+        config_path: Path,
+        ignore_method_body: bool
+) -> Benchmark:
     print_info("Running JavadocApi")
 
     data: dict[str, list[float]] = dict()
     for _ in range(5):
-        for name, val in run_javadoc_api_iteration(spoon_jar, javadoc_api_path, config_path).items():
+        items = run_javadoc_api_iteration(
+            spoon_jar,
+            javadoc_api_path,
+            config_path,
+            ignore_method_body
+        ).items()
+        for name, val in items:
             if name in data:
                 data[name].append(val)
             else:
@@ -129,11 +146,15 @@ def run_javadoc_api(spoon_jar: Path, javadoc_api_path: Path, config_path: Path) 
             values=duration
         )
 
-    return Benchmark(name="JavadocApi", measurements=measurements)
+    return Benchmark(
+        name="JavadocApi" if ignore_method_body else "JavadocApi (full)",
+        measurements=measurements
+    )
 
 
-def measure_javadoc_api(spoon_jar: Path):
-    print_header("Running JavadocApi")
+def measure_javadoc_api(spoon_jar: Path, ignore_method_body: bool):
+    name_suffix = 'without method bodies' if ignore_method_body else 'with method bodies'
+    print_header(f"Running JavadocApi {name_suffix}")
     javadoc_api = clone_javadoc_api()
     guava_path = clone_guava() / "guava/src"
 
@@ -142,4 +163,4 @@ def measure_javadoc_api(spoon_jar: Path):
 
     config = write_javadoc_api_config(javadoc_api, guava_path)
 
-    return run_javadoc_api(spoon_jar, javadoc_api, config)
+    return run_javadoc_api(spoon_jar, javadoc_api, config, ignore_method_body)
