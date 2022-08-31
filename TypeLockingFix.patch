@@ -1,0 +1,26 @@
+diff --git a/src/main/java/spoon/support/reflect/reference/CtTypeReferenceImpl.java b/src/main/java/spoon/support/reflect/reference/CtTypeReferenceImpl.java
+index 612422d0..cbeb7532 100644
+--- a/src/main/java/spoon/support/reflect/reference/CtTypeReferenceImpl.java
++++ b/src/main/java/spoon/support/reflect/reference/CtTypeReferenceImpl.java
+@@ -161,12 +161,15 @@ public class CtTypeReferenceImpl<T> extends CtReferenceImpl implements CtTypeRef
+ 			typeReference = componentTypeReference;
+ 		}
+ 		ClassLoader classLoader = getFactory().getEnvironment().getInputClassLoader();
+-		lock.lock();
+-		checkCacheIntegrity(classLoader);
+-		String qualifiedName = typeReference.getQualifiedName();
+-		Class<T> clazz =  classByQName.computeIfAbsent(qualifiedName, key -> loadClassWithQName(classLoader, qualifiedName));
+-		lock.unlock();
+-		return isArray() ? arrayType(clazz) : clazz;
++		try {
++			lock.lock();
++			checkCacheIntegrity(classLoader);
++			String qualifiedName = typeReference.getQualifiedName();
++			Class<T> clazz =  classByQName.computeIfAbsent(qualifiedName, key -> loadClassWithQName(classLoader, qualifiedName));
++			return isArray() ? arrayType(clazz) : clazz;
++		} finally {
++			lock.unlock();
++		}
+ 	}
+ 
+ 	/**

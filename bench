@@ -2,12 +2,52 @@
 
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
-from subprocess import STDOUT, CalledProcessError, SubprocessError, check_output
+from subprocess import STDOUT, CalledProcessError, SubprocessError, check_call, check_output
 
 from common import print_header, print_info, print_success
 from javadoc_api import measure_javadoc_api
+
+
+def patch_spoon_if_needed(spoon_path: Path):
+    print_info("Patching spoon to fix locking bug")
+
+    fix_commit = "97c9d0782431e53ee72fddcb444b2d892d6618b0"
+    broken_commit = "d9bcb110cef86043eb5588e3cdfe97a6088f5ba2"
+
+    try:
+        check_output(
+            args=["git", "merge-base", "--is-ancestor", fix_commit, "HEAD"],
+            cwd=spoon_path,
+            stderr=STDOUT
+        )
+        # All is well, we are after the fix
+        print_success("  Fix already merged")
+        return
+    except CalledProcessError:
+        pass
+
+    # We are before the fix
+    try:
+        check_output(
+            args=["git", "merge-base", "--is-ancestor", broken_commit, "HEAD"],
+            cwd=spoon_path,
+            stderr=STDOUT
+        )
+    except CalledProcessError:
+        # All is well, we are before the breaking commit
+        print_success("  Bug not yet introduced")
+        return
+
+    patch_file_path = Path("TypeLockingFix.patch").absolute()
+    check_output(
+        args=["git", "apply", str(patch_file_path)],
+        cwd=spoon_path,
+        stderr=STDOUT
+    )
+    print_success("  Patched")
 
 
 def build_spoon(spoon_path: Path):
@@ -23,6 +63,7 @@ def build_spoon(spoon_path: Path):
 def main():
     print_header("Building Spoon revision")
     spoon_revision = Path(sys.argv[1])
+    patch_spoon_if_needed(spoon_revision)
     build_spoon(spoon_revision)
 
     spoon_jar = list(spoon_revision.glob("target/*-jar-with-dependencies.jar"))[0]
