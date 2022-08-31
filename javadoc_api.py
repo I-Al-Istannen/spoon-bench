@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from subprocess import STDOUT, check_output
 
-from common import (Benchmark, Interpretation, Measurement, SuccessMeasurement, clone_guava,
+from common import (Benchmark, Interpretation, Measurement, SuccessMeasurement, clone_guava, java_exe, java_home,
                     print_header, print_info, print_success)
 
 
@@ -58,7 +58,6 @@ def patch_javadoc_api(javadoc_api_path: Path, spoon_jar: Path):
         print_success("Skipped patch (build was present)")
         return
 
-
     with open("JavadocApi.patch.template", "r") as file:
         text = file.read().replace("{{PATH}}", str(spoon_jar))
 
@@ -84,7 +83,7 @@ def build_javadoc_api(javadoc_api_path: Path):
     check_output(
         args=["mvn", "clean", "package"],
         cwd=javadoc_api_path,
-        env={"JAVA_HOME": "/home/bench/.sdkman/candidates/java/current"},
+        env={"JAVA_HOME": java_home()},
         stderr=STDOUT
     )
     print_success("  Built")
@@ -100,7 +99,7 @@ def run_javadoc_api_iteration(
 
     output = check_output(
         args=[
-            "/home/bench/.sdkman/candidates/java/current/bin/java",
+            java_exe(),
             *(["-DkeepFullAst=true"] if not ignore_method_body else []),
             "-cp",
             f"{str(spoon_jar.absolute())}:" +
@@ -152,7 +151,7 @@ def run_javadoc_api(
     )
 
 
-def measure_javadoc_api(spoon_jar: Path, ignore_method_body: bool):
+def measure_javadoc_api(spoon_jar: Path, ignore_method_body: bool) -> Benchmark:
     name_suffix = 'without method bodies' if ignore_method_body else 'with method bodies'
     print_header(f"Running JavadocApi {name_suffix}")
     javadoc_api = clone_javadoc_api()

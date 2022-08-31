@@ -72,6 +72,15 @@ class Benchmark:
         return {self.name: vals}
 
 
+def java_home():
+    # /home/bench/.sdkman/candidates/java/current/
+    return "/usr/lib/jvm/java-18-openjdk"
+
+
+def java_exe():
+    return java_home() + "/bin/java"
+
+
 def clone_guava() -> Path:
     print_info("Cloning guava")
     guava_path = Path("/tmp/guava")

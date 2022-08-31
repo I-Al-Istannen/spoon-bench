@@ -2,13 +2,14 @@
 
 import json
 import os
-import shutil
 import sys
+from functools import reduce
 from pathlib import Path
-from subprocess import STDOUT, CalledProcessError, SubprocessError, check_call, check_output
+from subprocess import STDOUT, CalledProcessError, check_output
 
 from common import print_header, print_info, print_success
 from javadoc_api import measure_javadoc_api
+from parse_print import measure_parse_print
 
 
 def patch_spoon_if_needed(spoon_path: Path):
@@ -67,15 +68,13 @@ def main():
     build_spoon(spoon_revision)
 
     spoon_jar = list(spoon_revision.glob("target/*-jar-with-dependencies.jar"))[0]
-    benchmark_without_body = measure_javadoc_api(spoon_jar, True)
-    benchmark_with_body = measure_javadoc_api(spoon_jar, False)
-    print(json.dumps(
-        dict(
-            benchmark_without_body.to_dict(),
-            **benchmark_with_body.to_dict()
-        ),
-        indent=2
-    ))
+    benchmarks = [
+        measure_javadoc_api(spoon_jar, True),
+        measure_javadoc_api(spoon_jar, False),
+        measure_parse_print(spoon_jar),
+    ]
+    json_benchmarks = reduce(lambda a, b: dict(a, **b), [x.to_dict() for x in benchmarks])
+    print(json.dumps(json_benchmarks, indent=2))
 
 
 if __name__ == "__main__":
