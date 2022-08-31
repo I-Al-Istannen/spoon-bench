@@ -82,8 +82,13 @@ def clone_guava() -> Path:
         # shutil.rmtree(guava_path)
 
     check_output(
-        args=["git", "clone", "https://github.com/google/guava", str(guava_path), "--depth=1"],
+        args=["git", "clone", "https://github.com/google/guava", str(guava_path)],
         stderr=STDOUT
+    )
+    check_output(
+        args=["git", "checkout", "807a5938700ba4041bf8fa4d1a1ebbc040b04906"],
+        stderr=STDOUT,
+        cwd=guava_path
     )
 
     print_success("  Cloned")
