@@ -73,8 +73,7 @@ class Benchmark:
 
 
 def java_home():
-    # /home/bench/.sdkman/candidates/java/current/
-    return "/usr/lib/jvm/java-18-openjdk"
+    return "/home/bench/.sdkman/candidates/java/current/"
 
 
 def java_exe():
